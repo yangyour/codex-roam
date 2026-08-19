@@ -31,7 +31,9 @@ $adapters = @(Invoke-SafeCheck -Fallback @() -Script {
     Get-NetAdapter -IncludeHidden -ErrorAction Stop |
         Where-Object {
             $_.Name -like '*EasyTier*' -or
-            $_.InterfaceDescription -like '*EasyTier*'
+            $_.InterfaceDescription -like '*EasyTier*' -or
+            $_.Name -like 'et_*' -or
+            $_.InterfaceDescription -like 'et_*'
         } |
         Sort-Object ifIndex |
         ForEach-Object {

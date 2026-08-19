@@ -24,7 +24,7 @@ The **Connection settings** page is the primary configuration surface.
 
 | App field | Example | Notes |
 | --- | --- | --- |
-| Computer URL | `http://10.126.126.10:4174` | Prefer the computer's EasyTier virtual IP |
+| EasyTier computer URL | `http://10.126.126.10:4174` | The computer's EasyTier virtual IP |
 | Wi-Fi fallback URL | `http://192.168.1.10:4174` | Optional LAN route |
 | Access token | hidden | Value created by the bridge |
 | Enable embedded EasyTier | on | Requires native libraries and Android VPN permission |
@@ -73,6 +73,7 @@ Supported defines are:
 | Define | App field |
 | --- | --- |
 | `CODEX_SERVER_URL` | Computer URL |
+| `EASYTIER_ADDRESS` | EasyTier computer URL (takes precedence during first-launch prefill) |
 | `CODEX_FALLBACK_URL` | Wi-Fi fallback URL |
 | `CODEX_CONSOLE_TOKEN` | Access token |
 | `EASYTIER_NETWORK_NAME` | Network name |

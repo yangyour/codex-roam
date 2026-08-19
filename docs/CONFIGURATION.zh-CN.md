@@ -23,7 +23,7 @@
 
 | App 字段 | 示例 | 说明 |
 | --- | --- | --- |
-| 电脑地址 | `http://10.126.126.10:4174` | 优先填写电脑的 EasyTier 虚拟 IP |
+| EasyTier 电脑地址 | `http://10.126.126.10:4174` | 填写电脑的 EasyTier 虚拟 IP |
 | Wi-Fi 回退地址 | `http://192.168.1.10:4174` | 可选的局域网路径 |
 | 访问令牌 | 隐藏 | 由桥接服务生成 |
 | 启用内置 EasyTier | 开启 | 需要原生库和 Android VPN 权限 |
@@ -67,6 +67,7 @@ Android App 使用相同的网络名称、密钥和节点 URI，并把
 | 定义 | App 字段 |
 | --- | --- |
 | `CODEX_SERVER_URL` | 电脑地址 |
+| `EASYTIER_ADDRESS` | EasyTier 电脑地址（首次启动预填时优先于 `CODEX_SERVER_URL`） |
 | `CODEX_FALLBACK_URL` | Wi-Fi 回退地址 |
 | `CODEX_CONSOLE_TOKEN` | 访问令牌 |
 | `EASYTIER_NETWORK_NAME` | 网络名称 |

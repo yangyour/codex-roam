@@ -3,6 +3,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'models.dart';
 
 const _compiledServerUrl = String.fromEnvironment('CODEX_SERVER_URL');
+// Explicit EasyTier address takes precedence over the legacy server URL.
+const _compiledEasyTierAddress = String.fromEnvironment('EASYTIER_ADDRESS');
 const _compiledFallbackUrl = String.fromEnvironment('CODEX_FALLBACK_URL');
 const _compiledToken = String.fromEnvironment('CODEX_CONSOLE_TOKEN');
 const _compiledNetworkName = String.fromEnvironment('EASYTIER_NETWORK_NAME');
@@ -83,7 +85,9 @@ class AppSettings {
       serverUrl:
           preferences.getString('${_prefix}serverUrl') ??
           preferences.getString('baseUrl') ??
-          _compiledServerUrl,
+          (_compiledEasyTierAddress.trim().isNotEmpty
+              ? _compiledEasyTierAddress
+              : _compiledServerUrl),
       fallbackUrl:
           preferences.getString('${_prefix}fallbackUrl') ??
           _compiledFallbackUrl,

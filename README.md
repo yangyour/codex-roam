@@ -83,7 +83,7 @@ flutter build apk --release --target-platform android-arm64
 
 从任务抽屉或右上角菜单打开“连接设置”，可以编辑并持久化：
 
-- 电脑地址和可选的 Wi-Fi 回退地址；
+- EasyTier 电脑地址和可选的 Wi-Fi 回退地址；
 - 桥接服务访问令牌；
 - 内置 EasyTier 开关、网络名称、网络密钥、公共节点和虚拟网段。
 

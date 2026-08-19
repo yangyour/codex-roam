@@ -1,4 +1,5 @@
 {
+  "easyTierAddress": "http://10.126.126.10:4174",
   "serverUrl": "http://10.126.126.10:4174",
   "fallbackUrl": "http://192.168.1.10:4174",
   "easyTierNetworkName": "replace-with-your-network-name",

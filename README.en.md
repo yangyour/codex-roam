@@ -87,7 +87,7 @@ before distributing an APK.
 Open **Connection settings** from the task drawer or overflow menu. The app can
 edit and persist:
 
-- computer URL and optional Wi-Fi fallback URL;
+- EasyTier computer URL and optional Wi-Fi fallback URL;
 - bridge access token;
 - embedded EasyTier enabled state, network name, secret, peer, and CIDR.
 

@@ -194,7 +194,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       textInputAction: TextInputAction.next,
                       autocorrect: false,
                       decoration: const InputDecoration(
-                        labelText: '电脑地址',
+                        labelText: 'EasyTier 电脑地址',
                         hintText: 'http://10.0.0.1:4174',
                         prefixIcon: Icon(Icons.dns_outlined),
                       ),

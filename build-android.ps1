@@ -14,8 +14,13 @@ if (-not (Test-Path -LiteralPath $tokenPath)) {
 $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
 $token = (Get-Content -LiteralPath $tokenPath -Raw).Trim()
 $flutter = (Get-Command flutter -ErrorAction Stop).Source
+$easyTierAddress = [string]$config.easyTierAddress
+if ([string]::IsNullOrWhiteSpace($easyTierAddress)) {
+    $easyTierAddress = [string]$config.serverUrl
+}
 $defines = @(
     "--dart-define=CODEX_SERVER_URL=$($config.serverUrl)",
+    "--dart-define=EASYTIER_ADDRESS=$easyTierAddress",
     "--dart-define=CODEX_FALLBACK_URL=$($config.fallbackUrl)",
     "--dart-define=CODEX_CONSOLE_TOKEN=$token",
     "--dart-define=EASYTIER_NETWORK_NAME=$($config.easyTierNetworkName)",
