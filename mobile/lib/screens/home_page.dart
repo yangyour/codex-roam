@@ -74,9 +74,6 @@ class _HomePageState extends State<HomePage> {
   void _onStoreChanged() {
     if (!mounted) return;
     setState(() {});
-    if (store.active || _sending) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-    }
   }
 
   void _scrollToBottom() {
@@ -385,14 +382,91 @@ class _ApprovalBar extends StatelessWidget {
   }
 }
 
-class _Conversation extends StatelessWidget {
+class _Conversation extends StatefulWidget {
   const _Conversation({required this.store, required this.controller});
 
   final CodexStore store;
   final ScrollController controller;
 
   @override
+  State<_Conversation> createState() => _ConversationState();
+}
+
+class _ConversationState extends State<_Conversation> {
+  final _expandedTurns = <String>{};
+  String _contentKey = '';
+  String? _lastSelectedId;
+  bool _showJumpButton = false;
+  bool _initialScrollPending = true;
+
+  CodexStore get store => widget.store;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant _Conversation oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_onScroll);
+      widget.controller.addListener(_onScroll);
+    }
+  }
+
+  void _onScroll() {
+    if (!widget.controller.hasClients) return;
+    final position = widget.controller.position;
+    final show = position.maxScrollExtent - position.pixels > 120;
+    if (show != _showJumpButton && mounted) {
+      setState(() => _showJumpButton = show);
+    }
+  }
+
+  void _scrollToLatest({bool force = false}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.controller.hasClients) return;
+      final position = widget.controller.position;
+      final nearBottom =
+          position.maxScrollExtent - position.pixels < 120 ||
+          _initialScrollPending;
+      if (!force && !nearBottom) return;
+      _initialScrollPending = false;
+      widget.controller.animateTo(
+        position.maxScrollExtent,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+      );
+    });
+  }
+
+  String _keyFor(List<CodexTurn> turns) {
+    if (turns.isEmpty) return '${store.selectedId}:empty';
+    final last = turns.last;
+    final item = last.items.isEmpty ? null : last.items.last;
+    return [
+      store.selectedId,
+      turns.length,
+      last.id,
+      last.status,
+      last.items.length,
+      item?.id,
+      item?.text.length,
+      item?.output?.length,
+      item?.status,
+    ].join(':');
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_lastSelectedId != store.selectedId) {
+      _lastSelectedId = store.selectedId;
+      _expandedTurns.clear();
+      _contentKey = '';
+      _initialScrollPending = true;
+    }
     if (store.loading && store.detail == null) {
       return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
@@ -411,56 +485,156 @@ class _Conversation extends StatelessWidget {
         subtitle: '在下方发送指令，Codex 会在这台电脑上执行。',
       );
     }
-    return ListView.builder(
-      controller: controller,
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 30),
-      itemCount: turns.length,
-      itemBuilder: (context, index) => _TurnView(turn: turns[index]),
+    final key = _keyFor(turns);
+    if (key != _contentKey) {
+      _contentKey = key;
+      _scrollToLatest();
+    }
+    return Stack(
+      children: [
+        ListView.builder(
+          controller: widget.controller,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 72),
+          itemCount: turns.length,
+          itemBuilder: (context, index) {
+            final turn = turns[index];
+            final latest = index == turns.length - 1;
+            final expanded = latest || _expandedTurns.contains(turn.id);
+            return _TurnView(
+              turn: turn,
+              turnNumber: index + 1,
+              expanded: expanded,
+              canCollapse: !latest,
+              onToggle: () {
+                setState(() {
+                  if (expanded) {
+                    _expandedTurns.remove(turn.id);
+                  } else {
+                    _expandedTurns.add(turn.id);
+                  }
+                });
+              },
+            );
+          },
+        ),
+        if (_showJumpButton)
+          Positioned(
+            right: 14,
+            bottom: 12,
+            child: Material(
+              color: panelRaised,
+              shape: const CircleBorder(),
+              elevation: 2,
+              child: IconButton(
+                tooltip: '回到最新消息',
+                onPressed: () => _scrollToLatest(force: true),
+                icon: const Icon(Icons.keyboard_arrow_down_rounded),
+                iconSize: 22,
+              ),
+            ),
+          ),
+      ],
     );
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onScroll);
+    super.dispose();
   }
 }
 
 class _TurnView extends StatelessWidget {
-  const _TurnView({required this.turn});
+  const _TurnView({
+    required this.turn,
+    required this.turnNumber,
+    required this.expanded,
+    required this.canCollapse,
+    required this.onToggle,
+  });
 
   final CodexTurn turn;
+  final int turnNumber;
+  final bool expanded;
+  final bool canCollapse;
+  final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
     final visible = turn.items.where((item) => item.visible).toList();
+    final header = Row(
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: turn.inProgress ? mint : line,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 7),
+        Text(
+          '第 $turnNumber 轮 · ${turn.inProgress ? '实时活动' : '已完成'}',
+          style: TextStyle(
+            color: turn.inProgress ? mint : muted,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(width: 7),
+        Text(
+          '${visible.length} 条',
+          style: const TextStyle(color: muted, fontSize: 10),
+        ),
+        const Expanded(child: Divider(indent: 10)),
+        if (canCollapse)
+          Icon(
+            expanded
+                ? Icons.keyboard_arrow_up_rounded
+                : Icons.keyboard_arrow_down_rounded,
+            size: 18,
+            color: muted,
+          ),
+      ],
+    );
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: turn.inProgress ? mint : line,
-                  shape: BoxShape.circle,
-                ),
+          if (canCollapse)
+            InkWell(
+              onTap: onToggle,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: header,
               ),
-              const SizedBox(width: 7),
-              Text(
-                turn.inProgress ? '实时活动' : '已完成',
-                style: TextStyle(
-                  color: turn.inProgress ? mint : muted,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
+            )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: header,
+            ),
+          if (expanded) ...[
+            const SizedBox(height: 9),
+            ...visible.map((item) => _MessageView(item: item)),
+            if (turn.inProgress)
+              const Padding(
+                padding: EdgeInsets.only(top: 6, left: 12),
+                child: _WorkingIndicator(),
               ),
-              const Expanded(child: Divider(indent: 10)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...visible.map((item) => _MessageView(item: item)),
-          if (turn.inProgress)
-            const Padding(
-              padding: EdgeInsets.only(top: 8, left: 12),
-              child: _WorkingIndicator(),
+          ] else if (visible.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(left: 19, top: 5),
+              child: Text(
+                visible.last.text.isNotEmpty
+                    ? visible.last.text.replaceAll('\n', ' ')
+                    : '命令输出',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: muted, fontSize: 11.5),
+              ),
             ),
         ],
       ),
@@ -480,15 +654,15 @@ class _MessageView extends StatelessWidget {
         alignment: Alignment.centerRight,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 520),
-          margin: const EdgeInsets.only(bottom: 12, left: 38),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+          margin: const EdgeInsets.only(bottom: 9, left: 38),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
           decoration: BoxDecoration(
             color: panelRaised,
             borderRadius: BorderRadius.circular(8),
           ),
           child: SelectableText(
             item.text,
-            style: const TextStyle(fontSize: 14, height: 1.55),
+            style: const TextStyle(fontSize: 13.5, height: 1.5),
           ),
         ),
       );
@@ -505,7 +679,7 @@ class _MessageView extends StatelessWidget {
       _ => 'Codex',
     };
     return Padding(
-      padding: const EdgeInsets.only(bottom: 13),
+      padding: const EdgeInsets.only(bottom: 9),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -529,13 +703,13 @@ class _MessageView extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 5),
           SelectableText(
             item.text,
             style: TextStyle(
               color: reasoning ? muted : ink,
-              fontSize: reasoning ? 12.5 : 14,
-              height: 1.62,
+              fontSize: reasoning ? 12 : 13.5,
+              height: 1.5,
             ),
           ),
         ],
@@ -556,7 +730,7 @@ class _CommandMessage extends StatelessWidget {
       if (item.output?.trim().isNotEmpty == true) item.output!.trimRight(),
     ].join('\n');
     return Container(
-      margin: const EdgeInsets.only(bottom: 13),
+      margin: const EdgeInsets.only(bottom: 9),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: commandSurface,
