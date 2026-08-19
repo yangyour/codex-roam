@@ -1,0 +1,95 @@
+diff --git a/build.rs b/build.rs
+index 2a788b4..0000000 100644
+--- a/build.rs
++++ b/build.rs
+@@ -42,6 +42,54 @@ fn clang_target_args(target: &str) -> Vec<String> {
+     args
+ }
+ 
++fn android_ndk_clang_args(target: &str) -> Vec<String> {
++    if !target.contains("-android") {
++        return Vec::new();
++    }
++
++    let Some(ndk_root) = ["ANDROID_NDK_HOME", "ANDROID_NDK_ROOT", "NDK_HOME"]
++        .into_iter()
++        .find_map(|key| env::var_os(key).map(PathBuf::from))
++    else {
++        return Vec::new();
++    };
++
++    let prebuilt_root = ndk_root.join("toolchains/llvm/prebuilt");
++    let Some(prebuilt) = std::fs::read_dir(&prebuilt_root)
++        .ok()
++        .and_then(|entries| {
++            entries
++                .filter_map(Result::ok)
++                .map(|entry| entry.path())
++                .find(|path| path.is_dir())
++        })
++    else {
++        return Vec::new();
++    };
++
++    let clang_root = prebuilt.join("lib/clang");
++    let builtin_include = std::fs::read_dir(&clang_root)
++        .ok()
++        .and_then(|entries| {
++            entries
++                .filter_map(Result::ok)
++                .map(|entry| entry.path())
++                .filter(|path| path.is_dir())
++                .max()
++        })
++        .map(|path| path.join("include"));
++
++    let mut args = vec![format!(
++        "--sysroot={}",
++        prebuilt.join("sysroot").to_string_lossy()
++    )];
++    if let Some(include) = builtin_include.filter(|path| path.is_dir()) {
++        args.push("-isystem".to_owned());
++        args.push(include.to_string_lossy().into_owned());
++    }
++    args
++}
++
+ fn zig_include_dirs(target: &str) -> Option<Vec<String>> {
+     let args = [
+         "cc".to_owned(),
+@@ -94,11 +142,13 @@ fn is_zigbuild(target: &str) -> bool {
+ }
+ 
+ fn generate_bindings(target: &str) {
+-    let extra_header_path = env::var("KCP_SYS_EXTRA_HEADER_PATH").unwrap_or_default();
+-    let extra_header_paths = extra_header_path
+-        .split(':')
+-        .filter(|s| !s.is_empty())
+-        .map(|p| format!("-I{p}"));
++    let extra_header_paths = env::var_os("KCP_SYS_EXTRA_HEADER_PATH")
++        .map(|paths| {
++            env::split_paths(&paths)
++                .map(|path| format!("-I{}", path.to_string_lossy()))
++                .collect::<Vec<_>>()
++        })
++        .unwrap_or_default();
+ 
+     let mut bindings = bindgen::Builder::default()
+         .header("wrapper.h")
+@@ -122,6 +172,7 @@ fn generate_bindings(target: &str) {
+             }
+         } else {
+             bindings = bindings.clang_args(clang_target_args(target));
++            bindings = bindings.clang_args(android_ndk_clang_args(target));
+         }
+     }
+ 
+@@ -181,5 +232,8 @@ fn main() {
+     println!("cargo:rerun-if-changed=wrapper.h");
+     println!("cargo:rerun-if-env-changed=KCP_SYS_EXTRA_HEADER_PATH");
++    println!("cargo:rerun-if-env-changed=ANDROID_NDK_HOME");
++    println!("cargo:rerun-if-env-changed=ANDROID_NDK_ROOT");
++    println!("cargo:rerun-if-env-changed=NDK_HOME");
+     println!("cargo:rerun-if-env-changed=CC_{}", target.replace('-', "_"));
+     println!("cargo:rerun-if-env-changed=CC");
+ 

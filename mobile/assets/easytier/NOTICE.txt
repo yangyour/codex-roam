@@ -1,0 +1,11 @@
+This application includes EasyTier, licensed under LGPL-3.0.
+
+Embedded binary version: source commit 57eb6908f4fc160f26946a14c672393a52df1101
+Source: https://github.com/EasyTier/EasyTier
+Vendored source: vendor/EasyTier in this project
+
+The EasyTier native components are packaged as replaceable shared libraries in
+the APK under lib/arm64-v8a. See LICENSE for the full license terms.
+
+The embedded EasyTier build includes kcp-sys (MIT license), whose source is
+vendored under vendor/EasyTier/third_party/kcp-sys.

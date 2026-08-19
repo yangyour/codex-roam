@@ -1,0 +1,8 @@
+{
+  "serverUrl": "http://10.126.126.10:4174",
+  "fallbackUrl": "http://192.168.1.10:4174",
+  "easyTierNetworkName": "replace-with-your-network-name",
+  "easyTierNetworkSecret": "replace-with-a-long-random-secret",
+  "easyTierPeer": "tcp://your-public-peer.example.com:11010",
+  "easyTierNetworkCidr": "10.126.126.0/24"
+}

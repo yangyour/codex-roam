@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.codex-console-token
+.codex-roam.local.json
+.protocol/
+*.log
+vendor/kcp-sys/
+vendor/EasyTier/target/
+mobile/android/app/src/main/jniLibs/
+mobile/build/
+mobile/test/failures/
+vendor/*.apk
