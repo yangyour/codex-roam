@@ -37,6 +37,8 @@ or release build when the required native toolchain is available.
 - Update both `README.md` and `README.zh-CN.md` when public workflow changes.
 - Update the configuration or release guide when a setting or build prerequisite
   changes.
+- Run golden tests locally on the target desktop renderer; CI excludes the
+  `golden` tag because font rasterization differs between operating systems.
 - Do not change the EasyTier submodule pointer unless the reason and upstream
   commit are documented.
 

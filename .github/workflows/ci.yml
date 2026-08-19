@@ -39,5 +39,5 @@ jobs:
         working-directory: mobile
       - run: flutter analyze
         working-directory: mobile
-      - run: flutter test
+      - run: flutter test --exclude-tags=golden
         working-directory: mobile

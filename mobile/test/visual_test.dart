@@ -8,6 +8,7 @@ import 'package:codex_roam/screens/connection_page.dart';
 import 'package:codex_roam/screens/home_page.dart';
 import 'package:codex_roam/theme.dart';
 
+@Tags(['golden'])
 void main() {
   testWidgets('connection screen is top aligned and prefilled', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
