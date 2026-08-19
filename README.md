@@ -4,7 +4,7 @@
 [![许可证：MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Android：ARM64](https://img.shields.io/badge/Android-ARM64-3DDC84.svg)](mobile/README.md)
 
-[English](README.md) | 简体中文
+[English](README.en.md) | 简体中文
 
 CodexRoam 是一个自托管的 Android 客户端，用来查看和控制你自己电脑上的
 OpenAI Codex。它可以实时显示消息、推理摘要、命令输出和文件变更；内置的

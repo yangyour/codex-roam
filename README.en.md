@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Android: ARM64](https://img.shields.io/badge/Android-ARM64-3DDC84.svg)](mobile/README.md)
 
-English | [简体中文](README.zh-CN.md)
+English | [简体中文](README.md)
 
 CodexRoam is a self-hosted Android client for monitoring and controlling OpenAI
 Codex on your own computer. It streams messages, reasoning summaries, command

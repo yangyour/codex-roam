@@ -34,7 +34,7 @@ or release build when the required native toolchain is available.
 - Explain the user-visible behavior and the security impact.
 - Keep one logical change per pull request.
 - Add or update focused tests for changed behavior.
-- Update both `README.md` and `README.zh-CN.md` when public workflow changes.
+- Update both `README.md` and `README.en.md` when public workflow changes.
 - Update the configuration or release guide when a setting or build prerequisite
   changes.
 - Run golden tests locally on the target desktop renderer; CI excludes the
