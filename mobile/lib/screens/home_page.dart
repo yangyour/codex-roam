@@ -2,23 +2,29 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../app_settings.dart';
 import '../codex_api.dart';
 import '../codex_store.dart';
 import '../easytier_service.dart';
 import '../models.dart';
 import '../theme.dart';
+import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
     required this.connection,
     required this.onDisconnect,
+    required this.settings,
+    required this.onSaveSettings,
     this.fallbackBaseUrls = const [],
     this.initialStore,
   });
 
   final ConnectionDetails connection;
   final Future<void> Function() onDisconnect;
+  final AppSettings settings;
+  final Future<void> Function(AppSettings settings) onSaveSettings;
   final List<String> fallbackBaseUrls;
   final CodexStore? initialStore;
 
@@ -135,6 +141,17 @@ class _HomePageState extends State<HomePage> {
     if (mounted) Navigator.maybePop(context);
   }
 
+  Future<void> _openSettings() async {
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) => SettingsPage(
+          settings: widget.settings,
+          onSave: widget.onSaveSettings,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final selected = store.selected;
@@ -146,6 +163,10 @@ class _HomePageState extends State<HomePage> {
           unawaited(store.select(id));
         },
         onNew: _newThread,
+        onSettings: () {
+          Navigator.pop(context);
+          unawaited(_openSettings());
+        },
         onDisconnect: widget.onDisconnect,
       ),
       appBar: AppBar(
@@ -174,6 +195,7 @@ class _HomePageState extends State<HomePage> {
             tooltip: '更多',
             onSelected: (value) {
               if (value == 'new') _newThread();
+              if (value == 'settings') _openSettings();
               if (value == 'disconnect') widget.onDisconnect();
             },
             itemBuilder: (context) => const [
@@ -182,6 +204,14 @@ class _HomePageState extends State<HomePage> {
                 child: ListTile(
                   leading: Icon(Icons.add_rounded),
                   title: Text('新建任务'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: 'settings',
+                child: ListTile(
+                  leading: Icon(Icons.settings_outlined),
+                  title: Text('连接设置'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -707,12 +737,14 @@ class _ThreadDrawer extends StatelessWidget {
     required this.store,
     required this.onSelect,
     required this.onNew,
+    required this.onSettings,
     required this.onDisconnect,
   });
 
   final CodexStore store;
   final ValueChanged<String> onSelect;
   final VoidCallback onNew;
+  final VoidCallback onSettings;
   final Future<void> Function() onDisconnect;
 
   @override
@@ -826,6 +858,11 @@ class _ThreadDrawer extends StatelessWidget {
                     ),
             ),
             const Divider(height: 1),
+            ListTile(
+              leading: const Icon(Icons.settings_outlined),
+              title: const Text('连接设置', style: TextStyle(fontSize: 13)),
+              onTap: onSettings,
+            ),
             ListTile(
               leading: const Icon(Icons.link_off_rounded),
               title: const Text('更换电脑', style: TextStyle(fontSize: 13)),

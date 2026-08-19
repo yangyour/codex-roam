@@ -3,22 +3,14 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'app_settings.dart';
+
 class EasyTierService extends ChangeNotifier {
   EasyTierService._();
 
   static final instance = EasyTierService._();
   static const _methods = MethodChannel('app.codexroam/easytier');
   static const _events = EventChannel('app.codexroam/easytier_events');
-
-  static const _networkName = String.fromEnvironment('EASYTIER_NETWORK_NAME');
-  static const _networkSecret = String.fromEnvironment(
-    'EASYTIER_NETWORK_SECRET',
-  );
-  static const _peer = String.fromEnvironment('EASYTIER_PEER');
-  static const _networkCidr = String.fromEnvironment(
-    'EASYTIER_NETWORK_CIDR',
-    defaultValue: '10.126.126.0/24',
-  );
 
   StreamSubscription<dynamic>? _subscription;
   String phase = 'idle';
@@ -41,11 +33,22 @@ class EasyTierService extends ChangeNotifier {
     }
   }
 
-  Future<void> ensureStarted() async {
+  Future<void> applySettings(
+    EasyTierSettings settings, {
+    bool restart = false,
+  }) async {
     if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
-    if (_networkName.isEmpty || _peer.isEmpty) {
+    if (restart) {
+      try {
+        _apply(await _methods.invokeMapMethod<String, dynamic>('stop'));
+      } on MissingPluginException {
+        _setError('当前安装包不包含 EasyTier 原生模块');
+        return;
+      }
+    }
+    if (!settings.configured) {
       phase = 'idle';
-      message = 'EasyTier 未配置，可使用局域网地址连接';
+      message = settings.enabled ? 'EasyTier 配置不完整' : 'EasyTier 已关闭，可使用局域网地址连接';
       notifyListeners();
       return;
     }
@@ -57,10 +60,7 @@ class EasyTierService extends ChangeNotifier {
       }
       _apply(
         await _methods.invokeMapMethod<String, dynamic>('start', {
-          'networkName': _networkName,
-          'networkSecret': _networkSecret,
-          'peer': _peer,
-          'networkCidr': _networkCidr,
+          ...settings.toPlatformArguments(),
         }),
       );
     } on PlatformException catch (error) {

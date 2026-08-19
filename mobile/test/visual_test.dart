@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:codex_roam/app_settings.dart';
 import 'package:codex_roam/codex_api.dart';
 import 'package:codex_roam/codex_store.dart';
 import 'package:codex_roam/models.dart';
@@ -98,6 +99,19 @@ void main() {
         debugShowCheckedModeBanner: false,
         home: HomePage(
           connection: const ConnectionDetails('http://127.0.0.1:4174', 'test'),
+          settings: const AppSettings(
+            serverUrl: 'http://127.0.0.1:4174',
+            fallbackUrl: '',
+            token: 'test',
+            easyTier: EasyTierSettings(
+              enabled: false,
+              networkName: '',
+              networkSecret: '',
+              peer: '',
+              networkCidr: '10.126.126.0/24',
+            ),
+          ),
+          onSaveSettings: (_) async {},
           initialStore: store,
           onDisconnect: () async {},
         ),

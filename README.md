@@ -64,6 +64,16 @@ automatically.
 
 ## Configure The Android App
 
+Open **连接设置** from the task drawer or the top-right menu. You can edit and
+apply the computer URL, Wi-Fi fallback URL, access token, and every embedded
+EasyTier setting without rebuilding the APK. Settings are stored locally on
+the phone; password fields remain hidden until explicitly revealed.
+
+The values passed with `--dart-define` are only first-launch defaults. Saved
+in-app values take precedence on later launches.
+
+### Optional Prefilled Build
+
 Copy `.codex-roam.example.json` to `.codex-roam.local.json` and configure:
 
 - `serverUrl`: the computer's EasyTier URL
@@ -92,8 +102,27 @@ flutter pub get
 flutter build apk --release --target-platform android-arm64
 ```
 
-You can then enter the bridge URL and token on the connection screen. Embedded
-EasyTier starts only when its compile-time settings are present.
+You can then enter the bridge URL and token on the connection screen and add
+EasyTier details from **连接设置**.
+
+## Desktop Setup Skill
+
+The repository includes a Codex desktop Skill that inspects the local bridge
+and EasyTier state without printing tokens, secrets, or process command lines.
+Install it for the current user:
+
+```powershell
+Copy-Item -Recurse -Force ./skills/codex-roam-setup `
+  "$env:USERPROFILE/.codex/skills/codex-roam-setup"
+```
+
+Then ask Codex: `使用 $codex-roam-setup 配置这台电脑的远程连接`.
+
+Both devices must use the same EasyTier network name, network secret, and
+public peer. Give the computer a stable virtual IPv4 address, then enter
+`http://<电脑虚拟IP>:4174` as the app's **电脑地址**. Enter the local LAN URL as
+the optional Wi-Fi fallback. The app's **虚拟网段** must contain the virtual IP,
+for example `10.126.126.0/24` for `10.126.126.10`.
 
 ## Build Embedded EasyTier
 

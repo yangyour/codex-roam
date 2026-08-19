@@ -1,0 +1,4 @@
+interface:
+  display_name: "CodexRoam Setup"
+  short_description: "Configure the desktop bridge and EasyTier"
+  default_prompt: "Use $codex-roam-setup to configure this computer for CodexRoam remote access."
