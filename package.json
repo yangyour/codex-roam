@@ -7,15 +7,16 @@
     "dev": "concurrently -k \"node server.mjs\" \"vite --host 0.0.0.0\"",
     "server": "node server.mjs",
     "build": "vite build",
+    "check": "npm run build",
     "start": "node server.mjs"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "concurrently": "latest",
-    "vite": "latest",
-    "react": "latest",
-    "react-dom": "latest",
-    "lucide-react": "latest"
+    "@vitejs/plugin-react": "6.0.5",
+    "concurrently": "10.0.5",
+    "vite": "8.2.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "lucide-react": "1.31.0"
   },
   "devDependencies": {}
 }

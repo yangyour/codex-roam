@@ -1,0 +1,46 @@
+name: Bug report
+description: Report a reproducible problem without sharing private credentials.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include bridge tokens, EasyTier secrets, private IP inventories, session files, or credential-bearing logs.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v0.1.0 or d5f2b9c
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Android app
+        - Windows bridge
+        - macOS bridge
+        - Linux bridge
+        - EasyTier integration
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Include safe, minimal steps and redacted addresses.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted logs
+      description: Remove tokens, secrets, private paths, and personal data before pasting.

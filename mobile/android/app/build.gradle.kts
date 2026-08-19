@@ -1,3 +1,12 @@
+import java.io.FileInputStream
+import java.util.Properties
+
+val signingPropertiesFile = rootProject.file("key.properties")
+val signingProperties = Properties()
+if (signingPropertiesFile.exists()) {
+    signingProperties.load(FileInputStream(signingPropertiesFile))
+}
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -15,7 +24,6 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "app.codexroam"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
@@ -30,9 +38,18 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (signingPropertiesFile.exists()) {
+                signingConfigs.create("codexRoamRelease") {
+                    keyAlias = signingProperties.getProperty("keyAlias")
+                    keyPassword = signingProperties.getProperty("keyPassword")
+                    storeFile = file(signingProperties.getProperty("storeFile"))
+                    storePassword = signingProperties.getProperty("storePassword")
+                }
+                signingConfig = signingConfigs.getByName("codexRoamRelease")
+            } else {
+                // Contributor builds stay reproducible; never ship this debug-signed APK.
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 

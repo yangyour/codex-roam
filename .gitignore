@@ -7,6 +7,9 @@ dist/
 vendor/kcp-sys/
 vendor/EasyTier/target/
 mobile/android/app/src/main/jniLibs/
+mobile/android/key.properties
+*.jks
+*.keystore
 mobile/build/
 mobile/test/failures/
 vendor/*.apk
