@@ -7,6 +7,7 @@ import 'app_settings.dart';
 import 'codex_api.dart';
 import 'easytier_service.dart';
 import 'models.dart';
+import 'notification_service.dart';
 import 'screens/connection_page.dart';
 import 'screens/home_page.dart';
 import 'theme.dart';
@@ -41,6 +42,7 @@ class _CodexMobileAppState extends State<CodexMobileApp> {
     super.initState();
     _settings = widget.initialSettings;
     _connection = _settings.connection;
+    unawaited(CodexNotificationService.instance.initialize());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       unawaited(_startEmbeddedNetwork());
     });

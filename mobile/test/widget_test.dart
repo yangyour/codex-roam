@@ -4,6 +4,16 @@ import 'package:http/testing.dart';
 import 'package:codex_roam/codex_api.dart';
 import 'package:codex_roam/codex_store.dart';
 import 'package:codex_roam/models.dart';
+import 'package:codex_roam/notification_service.dart';
+
+class _FakeNotificationSink implements CodexNotificationSink {
+  final notifications = <CodexTaskNotification>[];
+
+  @override
+  Future<void> show(CodexTaskNotification notification) async {
+    notifications.add(notification);
+  }
+}
 
 void main() {
   test('connection URL parser accepts the terminal URL', () {
@@ -92,6 +102,96 @@ void main() {
     expect(items.first.text, '逐段输出');
     expect(items.last.command, 'flutter test');
     expect(items.last.output, 'All tests passed');
+  });
+
+  test(
+    'store notifies once when a turn completes and again on a new turn',
+    () async {
+      final thread = CodexThread(
+        id: 'thread-notify',
+        preview: 'notification test',
+        name: 'Notification test',
+        cwd: r'E:\work',
+        updatedAt: 0,
+        status: 'active',
+        desktopOpen: false,
+      );
+      final sink = _FakeNotificationSink();
+      final store =
+          CodexStore(
+              CodexApi('http://127.0.0.1', 'test'),
+              notificationSink: sink,
+            )
+            ..threads = [thread]
+            ..selectedId = thread.id
+            ..detail = CodexDetail(thread, []);
+      addTearDown(store.dispose);
+
+      void event(String method, Map<String, dynamic> params) {
+        store.ingestEvent({
+          'type': 'notification',
+          'method': method,
+          'params': params,
+        });
+      }
+
+      event('turn/completed', {
+        'threadId': thread.id,
+        'turnId': 'turn-1',
+        'turn': {'id': 'turn-1', 'status': 'completed'},
+      });
+      await Future<void>.delayed(Duration.zero);
+      event('turn/completed', {
+        'threadId': thread.id,
+        'turnId': 'turn-1',
+        'turn': {'id': 'turn-1', 'status': 'completed'},
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(sink.notifications, hasLength(1));
+      expect(
+        sink.notifications.single.state,
+        CodexTaskNotificationState.completed,
+      );
+
+      event('turn/started', {'threadId': thread.id, 'turnId': 'turn-2'});
+      event('turn/completed', {
+        'threadId': thread.id,
+        'turnId': 'turn-2',
+        'turn': {'id': 'turn-2', 'status': 'completed'},
+      });
+      await Future<void>.delayed(Duration.zero);
+      expect(sink.notifications, hasLength(2));
+    },
+  );
+
+  test('store notifies when a task is blocked by approval', () async {
+    final thread = CodexThread(
+      id: 'thread-blocked',
+      preview: 'approval test',
+      name: null,
+      cwd: r'E:\work',
+      updatedAt: 0,
+      status: 'active',
+      desktopOpen: false,
+    );
+    final sink = _FakeNotificationSink();
+    final store =
+        CodexStore(CodexApi('http://127.0.0.1', 'test'), notificationSink: sink)
+          ..threads = [thread]
+          ..selectedId = thread.id;
+    addTearDown(store.dispose);
+
+    store.ingestEvent({
+      'type': 'approval',
+      'id': 'approval-1',
+      'method': 'item/commandExecution/requestApproval',
+      'params': {'threadId': thread.id, 'command': 'flutter test'},
+    });
+    await Future<void>.delayed(Duration.zero);
+
+    expect(sink.notifications, hasLength(1));
+    expect(sink.notifications.single.state, CodexTaskNotificationState.blocked);
+    expect(sink.notifications.single.body, contains('flutter test'));
   });
 
   test('API falls back from EasyTier to the Wi-Fi endpoint', () async {

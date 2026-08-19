@@ -22,6 +22,7 @@ the same private connection available away from your home Wi-Fi.
 - Embedded EasyTier VPN on Android; no separate VPN app is required
 - EasyTier address first, with automatic local Wi-Fi fallback
 - Editable connection and EasyTier settings inside the app
+- Local Android notifications when a task completes or becomes blocked
 - Local token authentication with no CodexRoam cloud account or telemetry
 - Desktop Codex Skill for inspecting bridge and EasyTier setup safely
 
@@ -92,6 +93,11 @@ edit and persist:
 
 Values supplied through `--dart-define` are first-launch defaults only. Saved
 in-app values take precedence after that.
+
+On Android 13+, allow notifications when prompted. Alerts are generated locally
+from the live bridge stream; no notification data is sent to a CodexRoam cloud
+service. Android may stop background apps, so keep the bridge available and
+reopen the app if the operating system has reclaimed it.
 
 For every supported option, EasyTier value mapping, private prefilled builds,
 and desktop setup, read:

@@ -33,6 +33,11 @@ The **Connection settings** page is the primary configuration surface.
 | Public peer | `tcp://peer.example.com:11010` | Must be reachable by both devices |
 | Virtual CIDR | `10.126.126.0/24` | Must contain the computer's virtual IP |
 
+Android 13 and newer asks for notification permission the first time the app
+starts. If permission is denied, the live conversation still works but task
+completion and blocked-task alerts remain disabled until enabled in Android
+system settings.
+
 All fields are persisted locally with `SharedPreferences`. Password fields are
 obscured in the UI, but device backups or a compromised device may still expose
 application data. Do not reuse credentials from other services.

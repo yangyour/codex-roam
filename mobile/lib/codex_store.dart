@@ -4,11 +4,13 @@ import 'package:flutter/foundation.dart';
 
 import 'codex_api.dart';
 import 'models.dart';
+import 'notification_service.dart';
 
 class CodexStore extends ChangeNotifier {
-  CodexStore(this.api);
+  CodexStore(this.api, {this.notificationSink});
 
   final CodexApi api;
+  final CodexNotificationSink? notificationSink;
   List<CodexThread> threads = [];
   CodexDetail? detail;
   String? selectedId;
@@ -22,6 +24,9 @@ class CodexStore extends ChangeNotifier {
   bool _refreshing = false;
   int _streamVersion = 0;
   int _lastStreamEventMs = 0;
+  final _notificationKeys = <String>{};
+  final _threadActivity = <String, bool>{};
+  bool _hasThreadBaseline = false;
 
   CodexThread? get selected =>
       threads.where((thread) => thread.id == selectedId).firstOrNull ??
@@ -47,6 +52,7 @@ class CodexStore extends ChangeNotifier {
     if (!silent) loading = true;
     try {
       threads = await api.listThreads();
+      _observeThreadTransitions(threads);
       selectedId ??= threads.firstOrNull?.id;
       if (selectedId != null) {
         final fetched = await api.readThread(selectedId!);
@@ -139,10 +145,21 @@ class CodexStore extends ChangeNotifier {
       return;
     }
     if (event['type'] == 'approval') {
+      final params =
+          (event['params'] as Map?)?.cast<String, dynamic>() ??
+          <String, dynamic>{};
       approval = ApprovalRequest(
         id: event['id'].toString(),
         method: event['method']?.toString() ?? '',
-        params: (event['params'] as Map?)?.cast<String, dynamic>() ?? {},
+        params: params,
+      );
+      _notifyBlocked(
+        params['threadId']?.toString() ?? selectedId,
+        'Codex 任务已暂停',
+        params['command']?.toString() ??
+            params['reason']?.toString() ??
+            '等待你处理命令审批',
+        key: 'approval:${event['id']}',
       );
       notifyListeners();
       return;
@@ -158,6 +175,7 @@ class CodexStore extends ChangeNotifier {
       final params =
           (event['params'] as Map?)?.cast<String, dynamic>() ??
           <String, dynamic>{};
+      _observeTaskNotification(method, params);
       if (_applyLiveNotification(method, params)) {
         _lastStreamEventMs = DateTime.now().millisecondsSinceEpoch;
         _streamVersion++;
@@ -170,6 +188,117 @@ class CodexStore extends ChangeNotifier {
       _scheduleRefresh(const Duration(milliseconds: 180));
     }
   }
+
+  void _observeThreadTransitions(List<CodexThread> nextThreads) {
+    for (final thread in nextThreads) {
+      final wasActive = _threadActivity[thread.id];
+      if (_hasThreadBaseline && wasActive == true && !thread.active) {
+        final blocked = _isBlockedStatus(thread.status);
+        if (blocked) {
+          _notifyBlocked(
+            thread.id,
+            'Codex 任务已阻塞',
+            _blockedMessage(thread.status),
+            key: 'state:blocked:${thread.id}',
+          );
+        } else {
+          _notifyCompleted(thread.id, key: 'state:completed:${thread.id}');
+        }
+      }
+      if (thread.active) _clearNotificationKeys(thread.id);
+      _threadActivity[thread.id] = thread.active;
+    }
+    _hasThreadBaseline = true;
+  }
+
+  void _observeTaskNotification(String method, Map<String, dynamic> params) {
+    final threadId = params['threadId']?.toString();
+    if (threadId == null || threadId.isEmpty) return;
+    if (method == 'turn/started') {
+      _clearNotificationKeys(threadId);
+      return;
+    }
+    if (method != 'turn/completed' &&
+        method != 'turn/failed' &&
+        method != 'turn/error') {
+      return;
+    }
+    final turn = (params['turn'] as Map?)?.cast<String, dynamic>();
+    final turnId = params['turnId']?.toString() ?? turn?['id']?.toString();
+    final status = turn?['status']?.toString() ?? '';
+    final key = 'turn:$method:$threadId:${turnId ?? 'unknown'}';
+    if (method == 'turn/failed' ||
+        method == 'turn/error' ||
+        status == 'failed') {
+      _notifyBlocked(
+        threadId,
+        'Codex 任务已阻塞',
+        'Codex 运行遇到错误，请打开任务查看详情',
+        key: key,
+      );
+    } else {
+      _notifyCompleted(threadId, key: key);
+    }
+  }
+
+  CodexThread? _threadById(String id) =>
+      threads.where((thread) => thread.id == id).firstOrNull ??
+      (detail?.thread.id == id ? detail?.thread : null);
+
+  void _notifyCompleted(String threadId, {required String key}) {
+    final thread = _threadById(threadId);
+    if (thread == null) return;
+    _notifyOnce(
+      key,
+      CodexTaskNotification(
+        threadId: threadId,
+        title: 'Codex 任务已完成',
+        body: thread.title,
+        state: CodexTaskNotificationState.completed,
+      ),
+    );
+  }
+
+  void _notifyBlocked(
+    String? threadId,
+    String title,
+    String body, {
+    required String key,
+  }) {
+    if (threadId == null || threadId.isEmpty) return;
+    final thread = _threadById(threadId);
+    _notifyOnce(
+      key,
+      CodexTaskNotification(
+        threadId: threadId,
+        title: title,
+        body: thread == null ? body : '${thread.title} · $body',
+        state: CodexTaskNotificationState.blocked,
+      ),
+    );
+  }
+
+  void _notifyOnce(String key, CodexTaskNotification notification) {
+    final sink = notificationSink;
+    if (sink == null) return;
+    if (!_notificationKeys.add(key)) return;
+    unawaited(sink.show(notification).catchError((_) {}));
+  }
+
+  void _clearNotificationKeys(String threadId) {
+    _notificationKeys.removeWhere((key) => key.contains(':$threadId'));
+  }
+
+  bool _isBlockedStatus(String status) => const {
+    'blocked',
+    'failed',
+    'systemError',
+    'error',
+    'waiting',
+  }.contains(status);
+
+  String _blockedMessage(String status) =>
+      status == 'waiting' ? '等待你处理审批或输入' : 'Codex 运行遇到错误，请打开任务查看详情';
 
   void _scheduleRefresh(Duration delay) {
     _refreshDebounce?.cancel();

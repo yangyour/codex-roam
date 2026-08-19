@@ -8,6 +8,7 @@ user-visible changes and security-relevant maintenance.
 - Add bilingual open-source documentation and contribution workflows.
 - Add in-app connection and EasyTier settings persistence.
 - Add the desktop `codex-roam-setup` Skill with redacted inspection.
+- Add local Android notifications for completed and blocked Codex tasks.
 
 ## [0.1.0] - 2026-08-19
 

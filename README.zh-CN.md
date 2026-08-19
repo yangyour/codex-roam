@@ -20,6 +20,7 @@ EasyTier 客户端让手机离开家庭 Wi-Fi 后仍能通过私有网络连接�
 - Android 内置 EasyTier VPN，无需额外安装 VPN App
 - 优先使用 EasyTier 地址，局域网 Wi-Fi 地址自动回退
 - 在 App 内编辑并保存连接信息和 EasyTier 配置
+- 任务完成或阻塞时发送 Android 本地通知
 - 本地令牌认证，不依赖 CodexRoam 云账号，不收集遥测数据
 - 附带桌面 Codex Skill，可安全检查桥接服务和 EasyTier 状态
 
@@ -88,6 +89,10 @@ flutter build apk --release --target-platform android-arm64
 
 通过 `--dart-define` 传入的值只用于首次启动预填。App 保存过配置后，以本地
 保存值为准。
+
+Android 13 及更高版本请在首次提示时允许通知。提醒由 App 根据桥接服务的实时事件
+在本机生成，不会发送到 CodexRoam 云服务。Android 可能回收后台 App；如果长时间
+没有提醒，请确认桥接服务仍在运行并重新打开 App。
 
 所有配置项、EasyTier 参数映射、私有预填构建和桌面端配置方法见：
 

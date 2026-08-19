@@ -7,6 +7,7 @@ import '../codex_api.dart';
 import '../codex_store.dart';
 import '../easytier_service.dart';
 import '../models.dart';
+import '../notification_service.dart';
 import '../theme.dart';
 import 'settings_page.dart';
 
@@ -51,8 +52,12 @@ class _HomePageState extends State<HomePage> {
             widget.connection.token,
             fallbackBaseUrls: widget.fallbackBaseUrls,
           ),
+          notificationSink: CodexNotificationService.instance,
         );
     store.addListener(_onStoreChanged);
+    CodexNotificationService.instance.onThreadSelected = (threadId) {
+      if (mounted) unawaited(store.select(threadId));
+    };
     EasyTierService.instance.addListener(_onEasyTierChanged);
     if (_ownsStore) unawaited(store.start());
   }
@@ -88,6 +93,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     store.removeListener(_onStoreChanged);
+    if (CodexNotificationService.instance.onThreadSelected != null) {
+      CodexNotificationService.instance.onThreadSelected = null;
+    }
     EasyTierService.instance.removeListener(_onEasyTierChanged);
     if (_ownsStore) store.dispose();
     _composerController.dispose();
